@@ -11,7 +11,8 @@ This is a solution for uploading Excel file into a Web App using SQL database, .
 
 
  ## Check the document
- 
+<a href="https://github.com/DevZe/TechnicalInterviewSolution/blob/master/Excel%20Uploader%20Solution%20Design.pdf" target="blank">
+ <a/>
  
  
  ## How to install
