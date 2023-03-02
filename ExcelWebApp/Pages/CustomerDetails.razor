@@ -1,0 +1,84 @@
+﻿@page "/customer-details"
+@using ExcelUploaderDataLibrary.Data.Models;
+@using ExcelWebApp.Data.DataEndPoint;
+@using ExcelWebApp.Models;
+
+
+
+@inject CustomerService customerService
+@inject IJSRuntime _JSRuntime
+@inject ExcelFileHelper customerHelper;
+
+
+@if(customerModel!=null)
+{
+    <!--Search results card-->
+    <div class="card text-center">
+        
+        <div class="card-body">
+            <h5 class="card-title">@customerModel.FirstName @customerModel.LastName</h5>
+            <p class="card-text fst-italic">@(DateOnly.FromDateTime(customerModel.DateOfBirth))</p>
+            
+        </div>
+       
+    </div>
+    <!--End Search results card-->
+    <hr />
+    <!--Bar Graph-->
+    <canvas id="myChart" style="width:100%;max-width:auto"></canvas>
+    <!--End Bar Graph-->
+}else{
+        <!--Search section -->
+       
+        <div class="input-group mb-3">
+            <input @bind-value="SearchName" class="form-control" list="datalistOptions" id="customerSearchInput" placeholder="Enter First Name...">
+            <button @onclick="SearchCustomer" class="btn-info">Search</button>
+        </div>
+      
+    <!--End Search section -->
+}
+
+@code {
+
+    List<MonthlyFinanceModel>? yearFinanceStatement;
+    CustomerModel? customerModel;
+    IJSObjectReference module { get; set; }
+    string? SearchName ;
+
+
+    //Search a single by name
+    async void SearchCustomer()
+    {
+        try
+        {
+            if(!string.IsNullOrWhiteSpace(SearchName))
+            {
+                //Query the database 
+                customerModel = customerService.GetCustomers(SearchName);
+                if(customerModel!=null)
+                {
+                    //Get the 12 month data
+                    yearFinanceStatement = customerHelper.LoadDataFromFile(customerModel.ExcelFileUrl);
+                    await customerHelper.getChartData(yearFinanceStatement);
+                }
+
+            }
+
+            
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+
+        //JSInterlop
+        module = await _JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/barChart.js");
+        await module.InvokeVoidAsync("InitChart", customerHelper.xValues, customerHelper.y1Values, customerHelper.y2Values);
+  
+    }
+}

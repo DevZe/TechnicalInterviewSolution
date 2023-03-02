@@ -1,0 +1,178 @@
+﻿@page "/"
+
+@inject CustomerService customer
+@inject IConfiguration _config
+@inject IJSRuntime _JSRuntime
+@inject ExcelFileHelper excelFileHelper
+
+<!--Customer EditForm-->
+@if (!isSubmited)
+{
+    <EditForm OnValidSubmit="OnSubmitForm" Model="@customerModel">
+
+        <div class="mb-3">
+            <label for="firstName"  class="form-label">First Name</label>
+            <input type="text" class="form-control font-monospace" id="firstName" @bind-value="@customerModel.FirstName" required>
+        </div>
+        <div class="mb-3">
+            <label for="lastName" class="form-label font-monospace">Last Name</label>
+            <input type="text" class="form-control" id="lastName" @bind-value="@customerModel.LastName" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="dateOfBirth" class="form-label fst-italic">Date of birth</label>
+            <input type="date" class="form-control" id="dateOfBirth" @bind-value="@customerModel.DateOfBirth" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="excelFormFile" class="form-label font-monospace">Select Excel(.xlsx) file</label>
+            <InputFile class="form-control" OnChange="excelFileHelper.LoadExcelFile" id="excelFormFile" accept=".xlsx" required>
+            </InputFile>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-outline-info" data-bs-toggle="modal" data-bs-target="#submitedCustomer">
+            Save
+        </button>
+    </EditForm>
+}
+<!--End Customer EditForm-->
+
+
+@if (isSubmited)
+{
+
+   
+    
+
+        @if (yearFinanceStatement != null)
+        {
+             <!--New Customer Details-->
+            <div class="card">
+                <ul>
+                    <li><h2>@customerModel.FirstName @customerModel.LastName</h2></li>
+                    <li><p class="fst-italic">@(DateOnly.FromDateTime(customerModel.DateOfBirth))</p></li>
+                        
+                </ul>
+       
+            </div>
+            <!--End New Customer Details-->
+            <hr />
+
+            <!--Bar Graph-->
+
+            <canvas id="myChart" style="width:100%;max-width:auto"></canvas>
+
+            <!--End Bar Graph-->
+        }
+        else
+        {
+            <hr/>
+            <p>Loading...</p>
+        }
+
+        <!--Display Errors-->
+        @if (Errors.Count > 0)
+        {
+            <h2 class="text-danger">Error</h2>
+            @foreach (var Error in Errors)
+            {
+                <p class="text-danger">@Error</p>
+            }
+    
+    
+        }
+    <!--End Display Errors-->
+}
+@code{
+
+
+    List<MonthlyFinanceModel>? yearFinanceStatement;
+    CustomerModel? customerModel;
+    List<string>? Errors = new();
+    bool isSubmited;
+    IJSObjectReference module { get; set; } 
+
+    protected override async Task OnInitializedAsync()
+    {
+        customerModel = new();
+        customerModel.DateOfBirth = DateTime.UtcNow;
+        yearFinanceStatement = new();
+
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+
+        try
+        {
+            module = await _JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/barChart.js");
+
+            //Render js
+            if (yearFinanceStatement != null)
+            {
+                await excelFileHelper.getChartData(yearFinanceStatement);
+                var xValues = excelFileHelper.xValues;
+                var y1Values = excelFileHelper.y1Values;
+                var y2Values = excelFileHelper.y2Values;
+
+                await module.InvokeVoidAsync("InitChart", xValues, y1Values, y2Values);
+            }
+            
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+
+    }
+
+   
+    //Submitting the Form to save data to database
+    private async Task OnSubmitForm()
+    {
+        if (excelFileHelper.excelFilePath != null)
+        {
+            try
+            {
+                //Populate the data 
+                customerModel.ExcelFileUrl = excelFileHelper.excelFilePath;
+                customer.SaveCustomer(customerModel);
+
+                //Get bar graph parameters
+                ReadFromExcel();
+                await excelFileHelper.getChartData(yearFinanceStatement);
+                var xValues = excelFileHelper.xValues;
+                var y1Values = excelFileHelper.y1Values;
+                var y2Values = excelFileHelper.y2Values;
+                isSubmited = true;
+            }
+            catch (Exception ex)
+            {
+
+                Errors.Add(ex.Message);
+                throw;
+            }
+            
+        }
+
+
+    }
+    //Read from the excel file 
+    private void ReadFromExcel()
+    {
+        try
+        {
+            yearFinanceStatement = excelFileHelper.ReadExcelFile(excelFileHelper.excelFilePath);
+
+        }
+        catch (Exception ex)
+        {
+
+            Errors.Add(ex.Message);
+        }
+
+    }
+
+   
+}
