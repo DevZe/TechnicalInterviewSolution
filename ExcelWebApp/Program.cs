@@ -1,6 +1,6 @@
 using ExcelUploaderDataLibrary.DataAccess;
 using ExcelWebApp.Data.DataEndPoint;
-
+using ExcelWebApp.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +9,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<ISQLDataAccess, SQLDataAccess>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
-builder.Services.AddScoped<IExcelFileHelper, ExcelFileHelper>();
+builder.Services.AddScoped<ExcelFileHelper>();
 
 
 var app = builder.Build();

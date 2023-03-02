@@ -5,7 +5,7 @@
 
 
 
-@inject CustomerService customerService
+@inject ICustomerService _customerService
 @inject IJSRuntime _JSRuntime
 @inject ExcelFileHelper customerHelper;
 
@@ -42,24 +42,24 @@
 
     List<MonthlyFinanceModel>? yearFinanceStatement;
     CustomerModel? customerModel;
-    IJSObjectReference module { get; set; }
+    IJSObjectReference? module { get; set; }
     string? SearchName ;
 
 
     //Search a single by name
-    async void SearchCustomer()
+    void SearchCustomer()
     {
         try
         {
             if(!string.IsNullOrWhiteSpace(SearchName))
             {
                 //Query the database 
-                customerModel = customerService.GetCustomers(SearchName);
+                customerModel = _customerService.GetCustomers(SearchName);
                 if(customerModel!=null)
                 {
                     //Get the 12 month data
                     yearFinanceStatement = customerHelper.LoadDataFromFile(customerModel.ExcelFileUrl);
-                    await customerHelper.getChartData(yearFinanceStatement);
+                    customerHelper.GetChartData(yearFinanceStatement);
                 }
 
             }

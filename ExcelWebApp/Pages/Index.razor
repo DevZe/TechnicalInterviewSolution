@@ -1,6 +1,7 @@
 ﻿@page "/"
+@using ExcelWebApp.Helpers
 
-@inject CustomerService customer
+@inject ICustomerService customer
 @inject IConfiguration _config
 @inject IJSRuntime _JSRuntime
 @inject ExcelFileHelper excelFileHelper
@@ -110,7 +111,7 @@
             //Render js
             if (yearFinanceStatement != null)
             {
-                await excelFileHelper.getChartData(yearFinanceStatement);
+                excelFileHelper.GetChartData(yearFinanceStatement);
                 var xValues = excelFileHelper.xValues;
                 var y1Values = excelFileHelper.y1Values;
                 var y2Values = excelFileHelper.y2Values;
@@ -141,7 +142,7 @@
 
                 //Get bar graph parameters
                 ReadFromExcel();
-                await excelFileHelper.getChartData(yearFinanceStatement);
+                excelFileHelper.GetChartData(yearFinanceStatement);
                 var xValues = excelFileHelper.xValues;
                 var y1Values = excelFileHelper.y1Values;
                 var y2Values = excelFileHelper.y2Values;
